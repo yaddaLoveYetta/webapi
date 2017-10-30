@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>     
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j='http://jakarta.apache.org/log4j/'>
+
+	<!-- 所有信息输出到控制台 -->
+	<appender name="DEBUG-ERRPRConsole" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}  %-36c %M %5L  %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="DEBUG" />
+			<param name="LevelMax" value="ERROR" />
+		</filter>
+	</appender>
+
+
+	<!-- 把DEBUG信息输出到控制台 -->
+	<appender name="DEBUGConsole" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}  %-36c %M %5L  %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="DEBUG" />
+			<param name="LevelMax" value="DEBUG" />
+		</filter>
+	</appender>
+
+	<!-- 把INFO信息输出到控制台 -->
+	<appender name="INFOConsole" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}  %-36c %M %5L  %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="INFO" />
+			<param name="LevelMax" value="INFO" />
+		</filter>
+	</appender>
+
+	<!-- 把WARN信息输出到控制台 -->
+
+	<appender name="WARNConsole" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}  %-36c %M %5L  %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="WARN" />
+			<param name="LevelMax" value="WARN" />
+		</filter>
+	</appender>
+
+	<!-- 把ERROR信息输出到控制台 -->
+
+	<appender name="ERRORConsole" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}  %-36c %5L %M %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="ERROR" />
+			<param name="LevelMax" value="ERROR" />
+		</filter>
+	</appender>
+
+	<!-- 把DEBUG信息输出到日志文件 -->
+
+	<appender name="DEBUGLog" class="org.apache.log4j.RollingFileAppender">
+		<param name="File" value="${webapp.root}/logs/debug" />
+		<param name="Append" value="true" />
+		<param name="MaxFileSize" value="1024KB" />
+		<param name="MaxBackupIndex" value="2" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}	%X{userId}	%X{userName}  %-36c %M %5L  %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="DEBUG" />
+			<param name="LevelMax" value="DEBUG" />
+		</filter>
+	</appender>
+
+	<!-- <appender name="DEBUGLog" class="org.apache.log4j.DailyRollingFileAppender"> <param name="File" value="${webapp.root}/logs/debug" 
+		/> <param name="Append" value="true" /> <param name="datePattern" value="'-'yyyy-MM-dd'.log'" /> <param name="MaxFileSize" 
+		value="1024KB" /> <param name="MaxBackupIndex" value="2" /> <layout class="org.apache.log4j.PatternLayout"> <param name="ConversionPattern" 
+		value="%-5p %d{MM月dd号 HH:mm} %X{userId} %X{userName} %-36c %M %5L %m%n" /> </layout> <filter class="org.apache.log4j.varia.LevelRangeFilter"> 
+		<param name="LevelMin" value="DEBUG" /> <param name="LevelMax" value="DEBUG" /> </filter> </appender> -->
+
+	<!-- 把INFO信息输出到日志文件 -->
+
+	<appender name="INFOLog" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${webapp.root}/logs/info" />
+		<param name="Append" value="true" />
+		<param name="datePattern" value="'-'yyyy-MM-dd'.log'" />
+		<param name="MaxFileSize" value="1024KB" />
+		<param name="MaxBackupIndex" value="2" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}	%X{userId}	%X{userName}  %-36c %M %5L  %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="INFO" />
+			<param name="LevelMax" value="INFO" />
+		</filter>
+	</appender>
+
+	<!-- 把WARN信息输出到日志文件 -->
+
+	<appender name="WARNLog" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="File" value="${webapp.root}/logs/warn" />
+		<param name="Append" value="true" />
+		<param name="datePattern" value="'-'yyyy-MM-dd'.log'" />
+		<param name="MaxFileSize" value="1024KB" />
+		<param name="MaxBackupIndex" value="2" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}  %-36c %M %5L %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="WARN" />
+			<param name="LevelMax" value="WARN" />
+		</filter>
+	</appender>
+
+	<!-- 把ERROR信息输出到日志文件 -->
+
+	<!-- <appender name="ERRORLog" class="org.apache.log4j.DailyRollingFileAppender"> <param name="File" value="${webapp.root}/logs/error" 
+		/> <param name="Append" value="true" /> <param name="datePattern" value="'-'yyyy-MM-dd'.log'" /> <param name="MaxFileSize" 
+		value="1024KB" /> <param name="MaxBackupIndex" value="2" /> <layout class="org.apache.log4j.PatternLayout"> <param name="ConversionPattern" 
+		value="%-5p %d{MM月dd号 HH:mm} %-36c %M %5L %m%n" /> </layout> <filter class="org.apache.log4j.varia.LevelRangeFilter"> <param 
+		name="LevelMin" value="ERROR" /> <param name="LevelMax" value="ERROR" /> </filter> </appender> -->
+
+	<appender name="ERRORLog" class="org.apache.log4j.RollingFileAppender">
+		<param name="File" value="${webapp.root}/logs/error" />
+		<param name="Append" value="true" />
+		<param name="MaxFileSize" value="1024KB" />
+		<param name="MaxBackupIndex" value="2" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p  %d{MM月dd号 HH:mm}  %-36c %M %5L  %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="ERROR" />
+			<param name="LevelMax" value="ERROR" />
+		</filter>
+	</appender>
+
+
+	<!-- 把INFO信息输出到数据库中 -->
+	<appender name="INFOJDBC" class="org.apache.log4j.jdbc.JDBCAppender">
+		<param name="URL" value="jdbc:mysql://127.0.0.1:3306/hrp-sms_new?useUincode=true&amp;characterEncoding=utf-8" />
+		<param name="driver" value="com.mysql.jdbc.Driver" />
+		<param name="user" value="root" />
+		<param name="password" value="" />
+		<param name="sql"
+			value="insert into t_Log(FUserID,FUserName,FIP,FClass,FMothod,FOperateTime,FLogLevel,FMessage) values ('%X{userId}','%X{userName}','%X{ip}','%C','%M','%d{yyyy-MM-dd HH:mm:ss}','%p','%m')" />
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="INFO" />
+			<param name="LevelMax" value="INFO" />
+		</filter>
+	</appender>
+
+
+	<!-- mybatis 输出调试sql -->
+	<appender name="IBatis" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-4r [%t] %-5p %c %x - %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="DEBUG" />
+			<param name="LevelMax" value="ERROR" />
+		</filter>
+	</appender>
+
+	<!-- 记录该包下所有日志-分文件记录-其中info还记录到数据库中 -->
+	<logger name="com.kingdee.eas.hrp.sms" additivity="false">
+		<level value="debug" />
+		<!-- <appender-ref ref="INFOJDBC" /> -->
+		<!-- <appender-ref ref="DEBUGLog" /> -->
+		<!-- <appender-ref ref="INFOLog" /> -->
+		<!-- <appender-ref ref="WARNLog" /> -->
+		<!-- <appender-ref ref="ERRORLog" /> -->
+		<appender-ref ref="DEBUG-ERRPRConsole" />
+	</logger>
+
+	<!-- <logger additivity="false"> -->
+	<!-- <level value="debug" /> -->
+	<!-- <appender-ref ref="IBatis" /> -->
+	<!-- </logger> -->
+
+	<!-- 根logger的设置 -->
+
+</log4j:configuration>
