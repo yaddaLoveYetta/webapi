@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.yadda</groupId>
+    <artifactId>webapi</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0.0</version>
+    <modules>
+        <module>webapi-core</module>
+        <module>webapi-test</module>
+    </modules>
+
+
+    <description>
+        给予SpringMVC通用webAPI设计
+        1：去掉MVC控制器，将http直接无缝接入java服务接口
+        2：统一出入参格式
+        3：统一异常规范:
+        4：自动检测服务接口规范
+        5：简洁易用无过多
+
+        后续扩展
+        1：API文档接口自动生成
+        2：API Mock
+        3：API自动化测试工具集成
+        4：接口版本管理
+        5：接口缓存
+        6：授权与验证
+
+        如果能做到以上几点，完全可以成就一个漂亮的开源系统
+        商业化也不是不可能
+    </description>
+
+</project>
