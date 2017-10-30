@@ -45,7 +45,7 @@
         <defaultGoal>compile</defaultGoal>
 
         <!-- <finalName>${project.artifactId}_${project.version}_${maven.build.timestamp}</finalName> -->
-        <finalName>${project.artifactId}_${project.version}</finalName>
+        <finalName>${project.artifactId}</finalName>
 
         <plugins>
             <plugin>

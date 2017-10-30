@@ -1,5 +1,8 @@
 package com.yadda.api.core;
 
+/**
+ * @author yadda
+ */
 public class ApiRequest {
 
 	private String accessToken;
