@@ -30,6 +30,7 @@ import com.yadda.api.common.ResultCode;
 import com.yadda.api.common.ResultObject;
 import com.yadda.api.common.Result;
 import com.yadda.api.core.ApiContainer.ApiRunnable;
+import sun.applet.Main;
 
 /**
  * @author yadda
@@ -236,7 +237,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
         if ((api = apiContainer.findApiRunnable(apiName, version)) == null) {
             throw new ApiException("调用失败，指定的API不存在,API:" + apiName + ",version:" + version);
-        } else if (apiName == null || apiName.trim().equals("")) {
+        } else if (apiName == null || "".equals(apiName.trim())) {
             throw new ApiException("调用失败，参数'method'不能为空");
         } else if (json == null) {
             throw new ApiException("调用失败，参数'params'不能为空");
@@ -387,7 +388,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         String params = apiRequest.getParams();
         String timestamp = apiRequest.getTimestamp();
 
-        String sign = Md5Util.MD5Encode(secret + methodName + params + token + timestamp + secret, "");
+        String sign = Md5Util.md5Encode(secret + methodName + params + token + timestamp + secret, "");
 
         if (!sign.toUpperCase().equals(apiRequest.getSign())) {
             throw new ApiException("验证失败，非法的签名!");
