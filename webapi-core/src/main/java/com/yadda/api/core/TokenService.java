@@ -2,25 +2,35 @@ package com.yadda.api.core;
 
 public interface TokenService {
 
-	/**
-	 * 创建token
-	 * 
-	 * @Title createToken
-	 * @return
-	 * @return Token
-	 * @date 2017-10-27 22:07:47 星期五
-	 */
-	Token createToken();
+    /**
+     * 创建token
+     *
+     * @param appId
+     * @param appSecret
+     * @return
+     */
+    Token create(String appId, String appSecret);
 
-	/**
-	 * 获取token
-	 * 
-	 * @Title getToken
-	 * @param token
-	 * @return
-	 * @return Token
-	 * @date 2017-10-27 22:07:55 星期五
-	 */
-	Token getToken(String token);
+    /**
+     * 获取token
+     *
+     * @param token
+     * @return Token
+     * @Title get
+     * @date 2017-10-27 22:07:55 星期五
+     */
+    Token get(String token);
+
+    /**
+     * 清除指定token
+     *
+     * @param token
+     */
+    void remove(String token);
+
+    /**
+     * 清除所有token
+     */
+    void removeAll();
 
 }

@@ -1,98 +1,88 @@
 package com.yadda.api.core;
 
 /**
+ * <p>
+ * 请求签名验证对象
+ * <p>
+ * 签名规则：<p>
+ * 1:将请求参数params按照字典顺序升序排序得到字符串s1,<p>
+ * 2:appSecret+timestamp+s1 得到字符串s2<p>
+ * 3:将s2进行MD5加密得到字符串s3<p>
+ * 4:将s3转换为小写得到签名sign<p>
+ * <p>
+ * 客户端将token，sign，timestamp，params作为参数提交请求业务接口
+ *
  * @author yadda
  */
 public class ApiRequest {
 
-	private String accessToken;
-	private String methodName;
-	private String memberId;
-	private String params;
-	private String timestamp;
-	private String sign;
-	private String eCode;
-	private String uCode;
-	private boolean checked;
+    /**
+     * token（从平台获取）
+     */
+    private String accessToken;
+    /**
+     * 业务参数
+     */
+    private String params;
+    /**
+     * 签名
+     */
+    private String sign;
+    /**
+     * 请求时间
+     */
+    private String timestamp;
+    /**
+     * 签名验证是否通过
+     */
+    private boolean checked;
 
-	public String getAccessToken() {
-		return accessToken;
-	}
+    public String getAccessToken() {
+        return accessToken;
+    }
 
-	public void setAccessToken(String accessToken) {
-		this.accessToken = accessToken;
-	}
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
 
-	public String getMethodName() {
-		return methodName;
-	}
 
-	public void setMethodName(String methodName) {
-		this.methodName = methodName;
-	}
+    public String getParams() {
+        return params;
+    }
 
-	public String getParams() {
-		return params;
-	}
+    public void setParams(String params) {
+        this.params = params;
+    }
 
-	public void setParams(String params) {
-		this.params = params;
-	}
+    public String getSign() {
+        return sign;
+    }
 
-	public String getTimestamp() {
-		return timestamp;
-	}
+    public void setSign(String sign) {
+        this.sign = sign;
+    }
 
-	public void setTimestamp(String timestamp) {
-		this.timestamp = timestamp;
-	}
+    public String getTimestamp() {
+        return timestamp;
+    }
 
-	public String getSign() {
-		return sign;
-	}
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
 
-	public void setSign(String sign) {
-		this.sign = sign;
-	}
+    /**
+     * 是否通过了签名校验
+     *
+     * @return boolean
+     * @Title isChecked
+     * @date 2017-10-28 00:21:46 星期六
+     */
+    public boolean isChecked() {
+        return checked;
+    }
 
-	public String geteCode() {
-		return eCode;
-	}
-
-	public void seteCode(String eCode) {
-		this.eCode = eCode;
-	}
-
-	public String getuCode() {
-		return uCode;
-	}
-
-	public void setuCode(String uCode) {
-		this.uCode = uCode;
-	}
-
-	public String getMemberId() {
-		return memberId;
-	}
-
-	public void setMemberId(String memberId) {
-		this.memberId = memberId;
-	}
-
-	/**
-	 * 是否通过了签名校验
-	 * 
-	 * @Title isChecked
-	 * @return
-	 * @return boolean
-	 * @date 2017-10-28 00:21:46 星期六
-	 */
-	public boolean isChecked() {
-		return checked;
-	}
-
-	public void setChecked(boolean checked) {
-		this.checked = checked;
-	}
+    public void setChecked(boolean checked) {
+        this.checked = checked;
+    }
 
 }

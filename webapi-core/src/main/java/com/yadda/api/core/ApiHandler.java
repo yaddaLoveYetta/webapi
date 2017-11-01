@@ -1,19 +1,7 @@
 package com.yadda.api.core;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.yadda.api.common.*;
+import com.yadda.api.core.ApiContainer.ApiRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -23,14 +11,12 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 
-import com.yadda.api.common.ApiException;
-import com.yadda.api.common.JsonUtil;
-import com.yadda.api.common.Md5Util;
-import com.yadda.api.common.ResultCode;
-import com.yadda.api.common.ResultObject;
-import com.yadda.api.common.Result;
-import com.yadda.api.core.ApiContainer.ApiRunnable;
-import sun.applet.Main;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
  * @author yadda
@@ -42,7 +28,6 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
     private static final String PARAMS = "params";
     private static final String METHOD = "method";
     private static final String VERSION = "version";
-    private static final long EXPIRE_TIME = 8 * 60 * 1000;
 
     private ApiContainer apiContainer;
     private final ParameterNameDiscoverer parameterUtil;
@@ -70,19 +55,9 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext context) throws BeansException {
         apiContainer = new ApiContainer(context);
-
-        // 设置tokenService
-        if (tokenService == null) {
-
-            if (context.getBean(TokenService.class) != null) {
-                tokenService = context.getBean(TokenService.class);
-            } else {
-                tokenService = new DefaultTokenServiceImpl();
-            }
-
-        }
-
-        System.out.println(context.getBeanDefinitionNames().length);
+        tokenService = context.getBean(TokenService.class);
+        logger.info("init apiContainer & tokenService success");
+        logger.info("tokenService:" + tokenService);
     }
 
     public void handle(HttpServletRequest request, HttpServletResponse response) {
@@ -165,10 +140,8 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         ApiRequest apiRequest = new ApiRequest();
         apiRequest.setAccessToken(request.getParameter("token"));
         apiRequest.setSign(request.getParameter("sign"));
-        apiRequest.setTimestamp(request.getParameter("timestamp"));
-        apiRequest.seteCode(request.getParameter("eCode"));
-        apiRequest.setuCode(request.getParameter("uCode"));
         apiRequest.setParams(request.getParameter("params"));
+        apiRequest.setTimestamp(request.getParameter("timestamp"));
         apiRequest.setChecked(false);
 
         return apiRequest;
@@ -370,7 +343,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         // 默认不通过
         apiRequest.setChecked(false);
 
-        Token token = tokenService.getToken(apiRequest.getAccessToken());
+        Token token = tokenService.get(apiRequest.getAccessToken());
 
         if (token == null) {
             throw new ApiException("验证失败，指定的Token不存在！");
@@ -381,28 +354,53 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         }
 
         // 生成签名
-        String methodName = apiRequest.getMethodName();
 
         String accessToken = token.getAccessToken();
-        String secret = token.getSecret();
-        String params = apiRequest.getParams();
+        String secret = token.getAppSecret();
         String timestamp = apiRequest.getTimestamp();
+        Map<String, Object> params = JsonUtil.toMap(apiRequest.getParams());
 
-        String sign = Md5Util.md5Encode(secret + methodName + params + token + timestamp + secret, "");
+        params = sortMapByKey(params);
 
-        if (!sign.toUpperCase().equals(apiRequest.getSign())) {
+        String sign = Md5Util.md5Encode(secret + timestamp + params);
+
+        if (!sign.toLowerCase().equals(apiRequest.getSign())) {
             throw new ApiException("验证失败，非法的签名!");
         }
 
         // 时间验证
-        if (Math.abs(Long.valueOf(timestamp)) - System.currentTimeMillis() > EXPIRE_TIME) {
-            // 签名8小时过期
-            throw new ApiException("验证失败，签名失效!");
-        }
+//        if (Math.abs(Long.valueOf(timestamp)) - System.currentTimeMillis() > EXPIRE_TIME) {
+//            // 签名8小时过期
+//            throw new ApiException("验证失败，签名失效!");
+//        }
 
         apiRequest.setChecked(true);
-        apiRequest.setMemberId(token.getMemberId());
         return apiRequest;
+    }
+
+    /**
+     * 将Map按照key的字典顺序排序，返回TreeMap
+     *
+     * @param map
+     * @return
+     */
+    private static Map<String, Object> sortMapByKey(Map<String, Object> map) {
+
+        if (map == null || map.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Object> sortMap = new TreeMap<String, Object>(new Comparator<String>() {
+
+            @Override
+            public int compare(String str1, String str2) {
+                return str1.compareTo(str2);
+            }
+        });
+
+        sortMap.putAll(map);
+
+        return sortMap;
     }
 
     public static void main(String[] args) {

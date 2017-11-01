@@ -11,7 +11,7 @@ public class Md5Util {
 
         return resultSb.toString();
     }
-    
+
     private static String byteToHexString(byte b) {
         int n = b;
         if (n < 0) {
@@ -22,19 +22,24 @@ public class Md5Util {
         return HEX_DIGITS[d1] + HEX_DIGITS[d2];
     }
 
-    public static String md5Encode(String origin, String charsetname) {
+    public static String md5Encode(String origin, String charset) {
         String resultString = null;
         try {
             resultString = new String(origin);
             MessageDigest md = MessageDigest.getInstance("MD5");
-            if (charsetname == null || "".equals(charsetname)) {
+            if (charset == null || "".equals(charset)) {
                 resultString = byteArrayToHexString(md.digest(resultString.getBytes()));
             } else {
-                resultString = byteArrayToHexString(md.digest(resultString.getBytes(charsetname)));
+                resultString = byteArrayToHexString(md.digest(resultString.getBytes(charset)));
             }
         } catch (Exception exception) {
         }
         return resultString;
+    }
+
+    public static String md5Encode(String origin) {
+
+        return md5Encode(origin, "utf-8");
     }
 
     private static final String HEX_DIGITS[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"};
