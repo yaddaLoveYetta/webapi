@@ -1,9 +1,6 @@
 package com.yadda.demo;
 
-import com.yadda.api.core.ApiMapping;
-import com.yadda.api.core.ApiRequest;
-import com.yadda.api.core.ApiVersion;
-import com.yadda.api.core.Token;
+import com.yadda.api.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +12,7 @@ import org.springframework.stereotype.Service;
 public class ServiceDemo {
 
     @Autowired
-    private DefaultTokenServiceImpl defaultTokenService;
+    private TokenService defaultTokenService;
 
     @ApiVersion(version = 1.0f)
     @ApiMapping(value = "setAge", useLogin = true)
@@ -34,8 +31,9 @@ public class ServiceDemo {
     @ApiMapping(value = "getToken", useLogin = false)
     public String getToken(String appId, String appSecret) {
 
-        if ("test".equalsIgnoreCase(appId) && "123".equalsIgnoreCase(appSecret)) {
+//        if ("test".equalsIgnoreCase(appId) && "123".equalsIgnoreCase(appSecret)) {
 
+        if (true) {
             // 模拟用户名密码验证成功
 
             // 成成token
@@ -55,9 +53,9 @@ public class ServiceDemo {
         return s;
     }
 
-    @ApiMapping(value = "getName")
-    public String getName() {
-        return "fsdfdsafds";
+    @ApiMapping(value = "getName", useLogin = true)
+    public String getName(String name) {
+        return "收到消息 name =" + name;
     }
 
     @ApiMapping(value = "test")

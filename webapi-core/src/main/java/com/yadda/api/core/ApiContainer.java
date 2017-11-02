@@ -32,14 +32,18 @@ public class ApiContainer {
 
             type = applicationContext.getType(name);
 
-            ApiMapping classApiMapping = type.getAnnotation(ApiMapping.class);// 类上的APIMapping注解
+            // 类上的APIMapping注解
+            ApiMapping classApiMapping = type.getAnnotation(ApiMapping.class);
 
-            ApiVersion classApiVersion = type.getAnnotation(ApiVersion.class);// 类上的ApiVersion注解
+            // 类上的ApiVersion注解
+            ApiVersion classApiVersion = type.getAnnotation(ApiVersion.class);
 
             for (Method method : type.getDeclaredMethods()) {
 
-                ApiMapping methodApiMapping = method.getAnnotation(ApiMapping.class);// 方法上的APIMapping注解
-                ApiVersion methodApiVersion = method.getAnnotation(ApiVersion.class);// 方法上的ApiVersion注解
+                // 方法上的APIMapping注解
+                ApiMapping methodApiMapping = method.getAnnotation(ApiMapping.class);
+                // 方法上的ApiVersion注解
+                ApiVersion methodApiVersion = method.getAnnotation(ApiVersion.class);
 
                 if (methodApiMapping != null) {
                     // 类上的注解加上方法上的注解构成最终调用方法的Api名称

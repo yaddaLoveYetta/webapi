@@ -27,6 +27,23 @@ public class DefaultTokenServiceImpl implements TokenService {
     @Override
     public Token create(String appId, String appSecret) {
 
+        synchronized (this) {
+
+            // 没有定时任务维护过期token清理，此处简单处理过期token
+            for (Iterator<String> it = tokens.keySet().iterator(); it.hasNext(); ) {
+
+                String key = it.next();
+
+                Token t = tokens.get(key);
+
+                if (t.getExpiresTime().before(new Date()) || t.getAppId().equals(appId) || t.getAppSecret().equals(appSecret)) {
+                    //appId,appSecret 不可重复，每次请求都要生成新的token
+                    it.remove();
+                }
+            }
+        }
+
+
         Token token = new Token();
 
         Random random = new Random();
@@ -37,8 +54,8 @@ public class DefaultTokenServiceImpl implements TokenService {
         token.setAppSecret(appSecret);
         token.setAccessToken(accessToken);
         token.setCreateTime(calendar.getTime());
-
-        calendar.add(Calendar.HOUR, 8);
+        //token有效时间1小时
+        calendar.add(Calendar.HOUR, 1);
         token.setExpiresTime(calendar.getTime());
 
         tokens.put(accessToken, token);
@@ -54,6 +71,7 @@ public class DefaultTokenServiceImpl implements TokenService {
      */
     @Override
     public Token get(String token) {
+
         return tokens.get(token);
     }
 

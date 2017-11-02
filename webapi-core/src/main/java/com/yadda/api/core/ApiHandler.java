@@ -186,7 +186,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
         } catch (IOException e) {
 
-            logger.error("服务中心相应异常");
+            logger.error("服务中心响应异常");
             throw new RuntimeException(e);
         }
 
@@ -346,10 +346,12 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         Token token = tokenService.get(apiRequest.getAccessToken());
 
         if (token == null) {
-            throw new ApiException("验证失败，指定的Token不存在！");
+            throw new ApiException("验证失败，Token不存在！");
         }
 
         if (token.getExpiresTime().before(new Date())) {
+            // clear expired token
+            tokenService.remove(apiRequest.getAccessToken());
             throw new ApiException("验证失败，Token已失效！");
         }
 
