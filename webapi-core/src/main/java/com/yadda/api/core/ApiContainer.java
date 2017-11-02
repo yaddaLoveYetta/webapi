@@ -186,14 +186,26 @@ public class ApiContainer {
     // 用于执行对应的api方法
     public class ApiRunnable {
 
-        String apiName; // api名称
-        String targetName; // IOC bean 名称
-        Object target; // 方法实现实例
-        Method targetMethod;// 具体方法
+        /**
+         * api名称
+         */
+        String apiName;
+        /**
+         * IOC bean 名称
+         */
+        String targetName;
+        /**
+         * 方法实现实例
+         */
+        Object target;
+        /**
+         * 具体方法
+         */
+        Method targetMethod;
         /**
          * 方法是否需要进行签名验证
          */
-        boolean needCheck; // 是否要进行签名验证
+        boolean needCheck;
 
         public Object execute(Object... args) throws InvocationTargetException, IllegalAccessException, IllegalArgumentException {
 
