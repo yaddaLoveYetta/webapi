@@ -4,6 +4,8 @@ import com.yadda.api.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @author yadda
  */
@@ -59,8 +61,8 @@ public class ServiceDemo {
     }
 
     @ApiMapping(value = "test")
-    public void test() {
-
+    public int test(List<String> list) {
+        return list.size();
     }
 
 }

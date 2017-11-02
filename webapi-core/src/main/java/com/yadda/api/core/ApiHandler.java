@@ -243,7 +243,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         }
 
         if (requestParams == null) {
-            requestParams = new HashMap<String, Object>();
+            requestParams = new HashMap<String, Object>(0);
         }
 
         Method method = api.getTargetMethod();
@@ -252,7 +252,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         // 目标方法的参数类型
         Class<?>[] paramTypes = method.getParameterTypes();
 
-        // 判断传递参数是否符合目标方法定义--目标方法中是存在传递的参数
+        // 判断传递参数是否符合目标方法定义--目标方法中是否存在传递的参数
         for (Map.Entry<String, Object> m : requestParams.entrySet()) {
             if (!methodParamNames.contains(m.getKey())) {
                 throw new ApiException("调用失败，接口" + api.getApiName() + "不存在 " + m.getKey() + "参数，请检查params参数");
@@ -271,6 +271,8 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
             if (paramTypes[i].isAssignableFrom(HttpServletRequest.class)) {
                 args[i] = request;
+            } else if (paramTypes[i].isAssignableFrom(HttpServletResponse.class)) {
+                args[i] = response;
             } else if (requestParams.containsKey(methodParamNames.get(i))) {
                 try {
                     args[i] = convertJsonToBean(methodParamNames.get(i), requestParams.get(methodParamNames.get(i)), paramTypes[i]);
@@ -289,44 +291,46 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      * 将请求参数转换成目标方法参数对象
      *
      * @param paramName   目标方法参数名
-     * @param val         请求参数值
+     * @param paramValue  目标方法参数值
      * @param targetClass 目标方法参数类型
      * @return Object
      * @throws Exception
      * @Title convertJsonToBean
      * @date 2017-09-08 08:41:42 星期五
      */
-    private <T> Object convertJsonToBean(String paramName, Object val, Class<T> targetClass) throws Exception {
+    private <T> Object convertJsonToBean(String paramName, Object paramValue, Class<T> targetClass) throws Exception {
 
-        Object result = null;
-        if (val == null) {
+        Object value = null;
+        String dateRegex = "[0-9]+";
+        
+        if (paramValue == null) {
             return null;
         } else if (Integer.class.equals(targetClass)) {
-            result = Integer.parseInt(val.toString());
+            value = Integer.parseInt(paramValue.toString());
         } else if (Long.class.equals(targetClass)) {
-            result = Long.parseLong(val.toString());
+            value = Long.parseLong(paramValue.toString());
         } else if (Float.class.equals(targetClass)) {
-            result = Float.parseFloat(val.toString());
+            value = Float.parseFloat(paramValue.toString());
         } else if (Double.class.equals(targetClass)) {
-            result = Double.parseDouble(val.toString());
+            value = Double.parseDouble(paramValue.toString());
         } else if (Date.class.equals(targetClass)) {
-            if (val.toString().matches("[0-9]+")) {
-                result = new Date(Long.parseLong(val.toString()));
+            if (paramValue.toString().matches(dateRegex)) {
+                value = new Date(Long.parseLong(paramValue.toString()));
             } else {
                 throw new IllegalArgumentException(paramName + ":日期必须是长整型的时间戳");
             }
 
         } else if (String.class.equals(targetClass)) {
-            if (val instanceof String) {
-                result = val;
+            if (paramValue instanceof String) {
+                value = paramValue;
             } else {
                 throw new IllegalArgumentException(paramName + ":转换目标类型为字符串");
             }
         } else {
-            result = JsonUtil.toBean(val, targetClass);
+            value = JsonUtil.toBean(paramValue, targetClass);
         }
 
-        return result;
+        return value;
     }
 
     /**

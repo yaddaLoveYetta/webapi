@@ -78,8 +78,8 @@ public class ApiContainer {
                 throw new RuntimeException("你的接口返回模型不符合规范，请改正:" + method.getName());
             }
         }
-        // 执行接口参数规范的自动校验
-        Type[] parameterTypes = method.getGenericParameterTypes();
+
+/*        Type[] parameterTypes = method.getGenericParameterTypes();
         for (int i = 0; i < parameterTypes.length; i++) {
 
             if (Object.class.equals(parameterTypes[i].getClass())) {
@@ -88,9 +88,17 @@ public class ApiContainer {
             if (String.class.equals(parameterTypes[i].getClass())) {
                 throw new RuntimeException("你的接口模型不符合规范，请改正:" + method.getName());
             }
-        }
+        }*/
 
+        // 执行接口参数规范的自动校验
+        for (Type type : method.getGenericParameterTypes()) {
+            if (Object.class.getName().equals(type.getTypeName())) {
+                throw new RuntimeException("你的接口模型不符合规范[不允许定义Object类型参数]请改正:" + method.getDeclaringClass().getName() + "." + method.getName());
+            }
+        }
+        // method上的版本号优先级高于类上的版本号
         ApiVersion version = methodApiVersion == null ? classApiVersion : methodApiVersion;
+
         String ver = "";
         if (version != null) {
             ver = String.valueOf(version.version());
