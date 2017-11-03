@@ -2,6 +2,9 @@ package com.yadda.api.common;
 
 import java.security.MessageDigest;
 
+/**
+ * @author yadda
+ */
 public class Md5Util {
     private static String byteArrayToHexString(byte b[]) {
         StringBuffer resultSb = new StringBuffer();
@@ -42,6 +45,6 @@ public class Md5Util {
         return md5Encode(origin, "utf-8");
     }
 
-    private static final String HEX_DIGITS[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"};
+    private static final String[] HEX_DIGITS = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"};
 
 }

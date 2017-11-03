@@ -8,6 +8,9 @@ import com.alibaba.fastjson.serializer.SimpleDateFormatSerializer;
 import java.sql.Date;
 import java.util.Map;
 
+/**
+ * @author yadda
+ */
 public class JsonUtil {
 
     private static final SerializeConfig SC = new SerializeConfig(4);
