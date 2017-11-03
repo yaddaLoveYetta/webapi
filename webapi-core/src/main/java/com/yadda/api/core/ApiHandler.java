@@ -97,31 +97,26 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
             Object result = apiRun.execute(args);
 
-            // result统一格式化成json,如果接口返回基本类型eg:String,int,boolean...用data做key格式化成json形式
+            // result统一格式化成json,如果接口返回基本类型或者不能序列化成json类型eg:String,int,boolean...用data做key格式化成json形式
             result = resultWarp(result);
 
             r.setCode(ResultCode.SUCCESS);
             r.setMsg("Success");
             r.setData(result);
 
-        } catch (ApiException e) {
+        } catch (BaseException e) {
             logger.error("请求接口={" + method + "} 参数=" + params + "", e);
-            r.setCode(ResultCode.PARAMETER_ERROR);
+            r.setCode(e.getCode());
             r.setMsg(e.getMessage());
         } catch (InvocationTargetException e) {
             logger.error("请求接口={" + method + "} 参数=" + params + "", e);
-            r.setCode(ResultCode.SYS_ERROR);
+            r.setCode(ResultCode.UNKNOWN_ERROR);
             r.setMsg(e.getMessage());
-
-            // result = handleError(e.getTargetException());
         } catch (Exception e) {
-            // response.setStatus(500); // 封装异常并返回
             logger.error("其他业务异常");
-
-            r.setCode(ResultCode.BUSINESS_ERROR);
+            r.setCode(ResultCode.UNKNOWN_ERROR);
             r.setMsg(e.getMessage());
         }
-
         // 统一返回结果
         returnResult(r, response);
 
@@ -158,8 +153,8 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
     private Object resultWarp(Object result) {
 
         if (result == null || Integer.class.equals(result.getClass()) || Long.class.equals(result.getClass()) || Float.class.equals(result.getClass()) || Double.class.equals(result.getClass())
-                || Date.class.equals(result.getClass()) || String.class.equals(result.getClass()) || Character.class.equals(result.getClass()) || Byte.class.equals(result.getClass())
-                || Short.class.equals(result.getClass())) {
+                || Date.class.equals(result.getClass()) || Character.class.equals(result.getClass()) || Byte.class.equals(result.getClass())
+                || Short.class.equals(result.getClass()) || String.class.equals(result.getClass())) {
 
             result = new ResultObject(result);
         }
@@ -209,11 +204,11 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         ApiRunnable api;
 
         if ((api = apiContainer.findApiRunnable(apiName, version)) == null) {
-            throw new ApiException("调用失败，指定的API不存在,API:" + apiName + ",version:" + version);
+            throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，指定的API不存在,API:" + apiName + ",version:" + version);
         } else if (apiName == null || "".equals(apiName.trim())) {
-            throw new ApiException("调用失败，参数'method'不能为空");
+            throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'method'不能为空");
         } else if (json == null) {
-            throw new ApiException("调用失败，参数'params'不能为空");
+            throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'params'不能为空");
         }
 
         // 可多一个签名做校验
@@ -302,7 +297,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
         Object value = null;
         String dateRegex = "[0-9]+";
-        
+
         if (paramValue == null) {
             return null;
         } else if (Integer.class.equals(targetClass)) {

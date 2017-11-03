@@ -2,6 +2,9 @@ package com.yadda.api.common;
 
 import java.io.Serializable;
 
+/**
+ * @author yadda
+ */
 public class ResultObject implements Serializable {
 
 	private static final long serialVersionUID = 1L;

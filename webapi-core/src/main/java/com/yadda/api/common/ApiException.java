@@ -1,30 +1,38 @@
 package com.yadda.api.common;
 
-public class ApiException extends RuntimeException {
+/**
+ * Api调用异常
+ *
+ * @author yadda
+ */
+public class ApiException extends BaseException {
 
-	public ApiException() {
-		super();
-	}
+    //private static final Integer CODE = ResultCode.SYS_ERROR;
 
-	public ApiException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
-	}
+    private Integer code;
 
-	public ApiException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    @Override
+    public Integer getCode() {
+        return code;
+    }
 
-	public ApiException(String message) {
-		super(message);
-	}
+    @Override
+    public void setCode(Integer code) {
+        this.code = code;
+    }
 
-	public ApiException(Throwable cause) {
-		super(cause);
-	}
+    public ApiException(String msg) {
+        super(msg);
+    }
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    public ApiException(Integer code, String msg) {
+        super(code, msg);
+        this.code = code;
+    }
+
+    public ApiException(Integer code, String msg, Throwable cause) {
+        super(code, msg, cause);
+        this.code = code;
+    }
 
 }
