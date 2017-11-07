@@ -20,7 +20,7 @@ public class ApiContainer {
         this.applicationContext = applicationContext;
     }
 
-    public void loadApiFromSpringbeans() {
+    public void loadApiFromSpringBeans() {
 
         // spring ioc容器中所有bean
         String[] names = applicationContext.getBeanDefinitionNames();
@@ -132,6 +132,7 @@ public class ApiContainer {
 
         ApiRunnable apiRun = new ApiRunnable();
         apiRun.apiName = apiName;
+        apiRun.methodType = methodApiMapping.methodType();
         apiRun.targetMethod = method;
         apiRun.targetName = beanName;
         apiRun.needCheck = methodApiMapping.useLogin();
@@ -183,13 +184,20 @@ public class ApiContainer {
         return applicationContext;
     }
 
-    // 用于执行对应的api方法
+
+    /**
+     * 用于执行对应的api方法
+     */
     public class ApiRunnable {
 
         /**
          * api名称
          */
         String apiName;
+        /**
+         * api 请求类型
+         */
+        MethodEnum methodType;
         /**
          * IOC bean 名称
          */
@@ -224,6 +232,14 @@ public class ApiContainer {
 
         public String getApiName() {
             return apiName;
+        }
+
+        public MethodEnum getMethodType() {
+            return methodType;
+        }
+
+        public void setMethodType(MethodEnum methodType) {
+            this.methodType = methodType;
         }
 
         public void setApiName(String apiName) {

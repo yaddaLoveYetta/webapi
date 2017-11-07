@@ -7,21 +7,7 @@ import java.util.Date;
  * @author yadda
  */
 public class Token implements Serializable {
-    
-    @Override
-    public String toString() {
-        return "Token{" +
-                "id=" + id +
-                ", appId='" + appId + '\'' +
-                ", appSecret='" + appSecret + '\'' +
-                ", accessToken='" + accessToken + '\'' +
-                ", createTime=" + createTime +
-                ", expiresTime=" + expiresTime +
-                ", clientType='" + clientType + '\'' +
-                ", eCode='" + eCode + '\'' +
-                ", uCode='" + uCode + '\'' +
-                '}';
-    }
+
 
     private static final long serialVersionUID = -7747594044971723288L;
 
@@ -126,5 +112,20 @@ public class Token implements Serializable {
 
     public void setuCode(String uCode) {
         this.uCode = uCode;
+    }
+
+    @Override
+    public String toString() {
+        return "Token{" +
+                "id=" + id +
+                ", appId='" + appId + '\'' +
+                ", appSecret='" + appSecret + '\'' +
+                ", accessToken='" + accessToken + '\'' +
+                ", createTime=" + createTime +
+                ", expiresTime=" + expiresTime +
+                ", clientType='" + clientType + '\'' +
+                ", eCode='" + eCode + '\'' +
+                ", uCode='" + uCode + '\'' +
+                '}';
     }
 }

@@ -49,7 +49,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
     @Override
     public void afterPropertiesSet() {
-        apiContainer.loadApiFromSpringbeans();
+        apiContainer.loadApiFromSpringBeans();
     }
 
     @Override
@@ -64,6 +64,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         // 系统参数校验
         String params = request.getParameter(PARAMS);
         String method = request.getParameter(METHOD);
+
 
         Result r = new Result();
 
@@ -89,7 +90,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
                 }
 
                 if (!apiRequest.isChecked()) {
-                    throw new ApiException("调用失败，用户未登录");
+                    throw new ApiException(ResultCode.ACCESS_TOKEN_INVALID_OR_NO_LONGER_VALID, "调用失败，用户未登录");
                 }
             }
 
@@ -200,6 +201,8 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         String json = request.getParameter(PARAMS);
         String apiName = request.getParameter(METHOD);
         String version = request.getParameter(VERSION);
+        // 请求类型
+        String methodType = request.getMethod();
 
         ApiRunnable api;
 
@@ -209,6 +212,8 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
             throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'method'不能为空");
         } else if (json == null) {
             throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'params'不能为空");
+        } else if (api.methodType != MethodEnum.ALL && api.methodType.toString().toUpperCase().equalsIgnoreCase(methodType.toUpperCase())) {
+            throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，API:" + apiName + " 只支持" + api.methodType.toString() + "调用");
         }
 
         // 可多一个签名做校验
@@ -345,13 +350,13 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         Token token = tokenService.get(apiRequest.getAccessToken());
 
         if (token == null) {
-            throw new ApiException("验证失败，Token不存在！");
+            throw new ApiException(ResultCode.ACCESS_TOKEN_INVALID_OR_NO_LONGER_VALID, "验证失败，Token不存在！");
         }
 
         if (token.getExpiresTime().before(new Date())) {
             // clear expired token
             tokenService.remove(apiRequest.getAccessToken());
-            throw new ApiException("验证失败，Token已失效！");
+            throw new ApiException(ResultCode.ACCESS_TOKEN_EXPIRED, "验证失败，Token已失效！");
         }
 
         // 生成签名
@@ -366,7 +371,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         String sign = Md5Util.md5Encode(secret + timestamp + params);
 
         if (!sign.toLowerCase().equals(apiRequest.getSign())) {
-            throw new ApiException("验证失败，非法的签名!");
+            throw new ApiException(ResultCode.ACCESS_TOKEN_INVALID_OR_NO_LONGER_VALID, "验证失败，非法的签名!");
         }
 
         // 时间验证
