@@ -1,6 +1,7 @@
 package com.yadda.demo;
 
 import com.yadda.api.core.Token;
+import com.yadda.api.core.TokenHandler;
 import com.yadda.api.core.TokenService;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +12,7 @@ import java.util.*;
  * TokenService 默认实现
  */
 @Service
-public class DefaultTokenServiceImpl implements TokenService {
+public class DefaultTokenServiceImpl implements TokenService,TokenHandler {
 
     private volatile Map<String, Token> tokens = new HashMap<>();
 
@@ -93,4 +94,23 @@ public class DefaultTokenServiceImpl implements TokenService {
         tokens.clear();
     }
 
+    /**
+     * token检验成功后调用此方法
+     *
+     * @param token
+     */
+    @Override
+    public void tokenCheckSuccess(Token token) {
+
+    }
+
+    /**
+     * token调用失败调用此方法
+     *
+     * @param token
+     */
+    @Override
+    public void tokenCheckFail(Token token) {
+
+    }
 }

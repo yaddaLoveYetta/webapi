@@ -34,6 +34,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
     private TokenService tokenService;
 
+    private TokenHandler tokenHandler;
 
     public TokenService getTokenService() {
         return tokenService;
@@ -43,10 +44,29 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         this.tokenService = tokenService;
     }
 
+    public TokenHandler getTokenHandler() {
+        return tokenHandler;
+    }
+
+    public void setTokenHandler(TokenHandler tokenHandler) {
+        this.tokenHandler = tokenHandler;
+    }
+
     public ApiHandler() {
         parameterUtil = new LocalVariableTableParameterNameDiscoverer();
     }
 
+    /**
+     * 1. 实例化()构造函数;
+     * 2. 设置属性值(set);
+     * 3. 如果实现了BeanNameAware接口,调用setBeanName设置Bean的ID或者Name;
+     * 4. 如果实现BeanFactoryAware接口,调用setBeanFactory 设置BeanFactory;
+     * 5. 如果实现ApplicationContextAware,调用setApplicationContext设置ApplicationContext
+     * 6. 调用BeanPostProcessor的预先初始化方法;
+     * 7. 调用InitializingBean的afterPropertiesSet()方法;
+     * 8. 调用定制init-method方法；
+     * 9. 调用BeanPostProcessor的后初始化方法;
+     */
     @Override
     public void afterPropertiesSet() {
         apiContainer.loadApiFromSpringBeans();
@@ -55,9 +75,10 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext context) throws BeansException {
         apiContainer = new ApiContainer(context);
-        tokenService = context.getBean(TokenService.class);
+       /* tokenService = context.getBean(TokenService.class);
+        tokenHandler = context.getBean(TokenHandler.class);
         logger.info("init apiContainer & tokenService success");
-        logger.info("tokenService:" + tokenService);
+        logger.info("tokenService:" + tokenService);*/
     }
 
     public void handle(HttpServletRequest request, HttpServletResponse response) {
@@ -92,6 +113,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
                 if (!apiRequest.isChecked()) {
                     throw new ApiException(ResultCode.ACCESS_TOKEN_INVALID_OR_NO_LONGER_VALID, "调用失败，用户未登录");
                 }
+
             }
 
             Object[] args = buildParams(apiRun, params, request, response);
@@ -110,9 +132,10 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
             r.setCode(e.getCode());
             r.setMsg(e.getMessage());
         } catch (InvocationTargetException e) {
+            // 真实api中抛出的未捕获异常
             logger.error("请求接口={" + method + "} 参数=" + params + "", e);
-            r.setCode(ResultCode.UNKNOWN_ERROR);
-            r.setMsg(e.getMessage());
+            r.setCode(ResultCode.BUSINESS_LOGIC_ERROR);
+            r.setMsg(e.getTargetException().getMessage());
         } catch (Exception e) {
             logger.error("其他业务异常");
             r.setCode(ResultCode.UNKNOWN_ERROR);
@@ -381,6 +404,9 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 //        }
 
         apiRequest.setChecked(true);
+
+        tokenHandler.tokenCheckSuccess(token);
+
         return apiRequest;
     }
 

@@ -2,6 +2,8 @@ package com.yadda.api.core;
 // api IOC大仓库
 
 import com.yadda.api.common.ApiException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
 import java.lang.reflect.Field;
@@ -10,10 +12,16 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 
+/**
+ * @author yadda
+ */
 public class ApiContainer {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApiContainer.class);
     private ApplicationContext applicationContext;
-    // APi接口集合
+    /**
+     * APi接口集合
+     */
     private HashMap<String, ApiRunnable> apiMap = new HashMap<String, ApiRunnable>();
 
     public ApiContainer(ApplicationContext applicationContext) {
@@ -72,30 +80,38 @@ public class ApiContainer {
      */
     private void addApiItem(ApiMapping classApiMapping, ApiMapping methodApiMapping, ApiVersion classApiVersion, ApiVersion methodApiVersion, String beanName, Method method) {
 
-        // 执行接口返回模型规范的自动校验
-        for (Field f : method.getReturnType().getDeclaredFields()) {
-            if (f.getType().equals(Object.class)) {
-                throw new RuntimeException("你的接口返回模型不符合规范，请改正:" + method.getName());
+        /**
+         *执行接口返回模型规范的自动校验
+         */
+
+        //1:接口不能直接返回Object类型
+        if (method.getReturnType().equals(Object.class)) {
+            throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "不允许直接返回Object类型", method.getName()));
+        }
+
+        //2:接口返回类型不能有Object类型属性
+        for (Field field : method.getReturnType().getDeclaredFields()) {
+            if (field.getType().equals(Object.class)) {
+                throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型不允许定义Object属性", method.getName()));
             }
         }
 
-/*        Type[] parameterTypes = method.getGenericParameterTypes();
-        for (int i = 0; i < parameterTypes.length; i++) {
 
-            if (Object.class.equals(parameterTypes[i].getClass())) {
-                throw new RuntimeException("你的接口模型不符合规范，请改正:" + method.getName());
-            }
-            if (String.class.equals(parameterTypes[i].getClass())) {
-                throw new RuntimeException("你的接口模型不符合规范，请改正:" + method.getName());
-            }
-        }*/
+        // 接口方法入参不能直接用Object模糊类型
+        for (Class<?> aClass : method.getParameterTypes()) {
 
-        // 执行接口参数规范的自动校验
-        for (Type type : method.getGenericParameterTypes()) {
-            if (Object.class.getName().equals(type.getTypeName())) {
-                throw new RuntimeException("你的接口模型不符合规范[不允许定义Object类型参数]请改正:" + method.getDeclaringClass().getName() + "." + method.getName());
+            // 接口方法入参类型不能是Object
+            if (aClass.equals(Object.class)) {
+                throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "接口方法入参不允许定义Object类型", method.getName()));
+            }
+            // 接口方法入参类型不能有Object类型属性
+            for (Field field : aClass.getDeclaredFields()) {
+                if (field.getType().equals(Object.class)) {
+                    throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "接口方法入参类型不允许定义Object类型属性", method.getName()));
+                }
             }
         }
+
         // method上的版本号优先级高于类上的版本号
         ApiVersion version = methodApiVersion == null ? classApiVersion : methodApiVersion;
 
@@ -137,6 +153,8 @@ public class ApiContainer {
         apiRun.targetName = beanName;
         apiRun.needCheck = methodApiMapping.useLogin();
         apiMap.put(apiName, apiRun);
+
+        LOGGER.info("add api " + apiName);
 
     }
 
@@ -186,7 +204,7 @@ public class ApiContainer {
 
 
     /**
-     * 用于执行对应的api方法
+     * api执行器，用于执行对应的api方法
      */
     public class ApiRunnable {
 

@@ -69,6 +69,9 @@ public class JsonUtil {
      */
     public static <T> T toBean(Object val, Class<T> targetClass) {
 
+        if (val instanceof String) {
+            return JSON.parseObject(val.toString(), targetClass);
+        }
         return JSON.parseObject(JSON.toJSONString(val), targetClass);
         // return JSON.parseObject(JSON.toJSONString(val), new TypeReference<T>() {
         // });

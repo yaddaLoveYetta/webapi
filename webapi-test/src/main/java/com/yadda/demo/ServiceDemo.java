@@ -1,9 +1,11 @@
 package com.yadda.demo;
 
+import com.yadda.api.common.ApiException;
 import com.yadda.api.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.PrinterAbortException;
 import java.util.List;
 
 /**
@@ -22,6 +24,7 @@ public class ServiceDemo {
 
         student.setAge(age);
     }
+
 
     /**
      * 平台给每位用户分配一个appId，appSecret,用户用appId，appSecret向平台申请token，用token操作其他业务接口
@@ -64,5 +67,6 @@ public class ServiceDemo {
     public int test(List<String> list) {
         return list.size();
     }
+
 
 }

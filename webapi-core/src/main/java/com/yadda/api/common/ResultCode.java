@@ -39,5 +39,9 @@ public class ResultCode {
      * token已过期
      */
     public static final int ACCESS_TOKEN_EXPIRED = 7;
+    /**
+     * 业务处理异常
+     */
+    public static final int BUSINESS_LOGIC_ERROR = 8;
 
 }
