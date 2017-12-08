@@ -14,6 +14,8 @@
     </modules>
 
 
+
+
     <description>
         给予SpringMVC通用webAPI设计
         1：去掉MVC控制器，将http直接无缝接入java服务接口
@@ -29,9 +31,6 @@
         4：接口版本管理
         5：接口缓存
         6：授权与验证
-
-        如果能做到以上几点，完全可以成就一个漂亮的开源系统
-        商业化也不是不可能
     </description>
 
 </project>
