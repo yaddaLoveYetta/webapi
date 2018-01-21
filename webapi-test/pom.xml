@@ -2,19 +2,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <artifactId>webapi</artifactId>
-        <groupId>com.yadda</groupId>
-        <version>1.0.0</version>
-    </parent>
-    <groupId>${parent.groupId}</groupId>
+
+    <groupId>com.yadda</groupId>
     <artifactId>webapi_test</artifactId>
+    <version>1.0.0</version>
     <packaging>war</packaging>
     <name>${project.artifactId}</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+        <webapi.core.version>1.0.0</webapi.core.version>
     </properties>
 
     <dependencies>
@@ -30,7 +28,7 @@
         <dependency>
             <groupId>com.yadda</groupId>
             <artifactId>webapi-core</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${webapi.core.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
