@@ -2,13 +2,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <artifactId>webapi</artifactId>
-        <groupId>com.yadda</groupId>
-        <version>1.0.0</version>
-    </parent>
-    <groupId>${parent.groupId}</groupId>
+
+    <groupId>com.yadda</groupId>
     <artifactId>webapi_test</artifactId>
+    <version>1.0.0</version>
     <packaging>war</packaging>
     <name>${project.artifactId}</name>
 
