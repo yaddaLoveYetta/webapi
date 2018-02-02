@@ -12,6 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+        <webapi.core.version>1.0.0</webapi.core.version>
     </properties>
 
     <dependencies>
@@ -27,7 +28,7 @@
         <dependency>
             <groupId>com.yadda</groupId>
             <artifactId>webapi-core</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${webapi.core.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
