@@ -2,14 +2,16 @@ package com.yadda.api.core;
 // api IOC大仓库
 
 import com.yadda.api.common.ApiException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.HashMap;
 
 /**
@@ -28,6 +30,9 @@ public class ApiContainer {
         this.applicationContext = applicationContext;
     }
 
+    /**
+     * 解析出所有api
+     */
     public void loadApiFromSpringBeans() {
 
         // spring ioc容器中所有bean
@@ -54,6 +59,7 @@ public class ApiContainer {
                 ApiVersion methodApiVersion = method.getAnnotation(ApiVersion.class);
 
                 if (methodApiMapping != null) {
+                    // 方法上必须有ApiMapping注解，否则该方法不被解析为合法api
                     // 类上的注解加上方法上的注解构成最终调用方法的Api名称
                     addApiItem(classApiMapping, methodApiMapping, classApiVersion, methodApiVersion, name, method);
                 }
@@ -74,42 +80,38 @@ public class ApiContainer {
      * @param methodApiVersion 方法上api版本配置
      * @param beanName         bean在spring中的名称
      * @param method           api调用的真实方法
-     * @return void
-     * @Title addApiItem
      * @date 2017-09-04 10:37:55 星期一
      */
-    private void addApiItem(ApiMapping classApiMapping, ApiMapping methodApiMapping, ApiVersion classApiVersion, ApiVersion methodApiVersion, String beanName, Method method) {
+    private void addApiItem(ApiMapping classApiMapping, ApiMapping methodApiMapping, ApiVersion classApiVersion,
+            ApiVersion methodApiVersion, String beanName, Method method) {
 
-        /**
-         *执行接口返回模型规范的自动校验
-         */
+        //执行接口返回模型规范的自动校验
 
-        //1:接口不能直接返回Object类型
+        //1:接口不能直接返回Object模糊类型
         if (method.getReturnType().equals(Object.class)) {
             throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "不允许直接返回Object类型", method.getName()));
         }
 
-        //2:接口返回类型不能有Object类型属性
+        //2:返回类型必须可被序列化(非必须)
+        if (Serializable.class.isAssignableFrom(method.getReturnType())) {
+            throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型必须可被序列化", method.getName()));
+        }
+
+        //3:接口返回类型不能有Object模糊类型属性
         for (Field field : method.getReturnType().getDeclaredFields()) {
             if (field.getType().equals(Object.class)) {
-                throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型不允许定义Object属性", method.getName()));
+                throw new ApiException(
+                        String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型不允许定义Object属性", method.getName()));
+            }
+            // 非必须
+            if (Serializable.class.isAssignableFrom(field.getType())) {
+                throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型属性必须可被序列化", method.getName()));
             }
         }
 
-
-        // 接口方法入参不能直接用Object模糊类型
+        // 4:接口方法入参不能直接用Object模糊类型
         for (Class<?> aClass : method.getParameterTypes()) {
-
-            // 接口方法入参类型不能是Object
-            if (aClass.equals(Object.class)) {
-                throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "接口方法入参不允许定义Object类型", method.getName()));
-            }
-            // 接口方法入参类型不能有Object类型属性
-            for (Field field : aClass.getDeclaredFields()) {
-                if (field.getType().equals(Object.class)) {
-                    throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "接口方法入参类型不允许定义Object类型属性", method.getName()));
-                }
-            }
+            checkDeclaredFields(aClass, method);
         }
 
         // method上的版本号优先级高于类上的版本号
@@ -117,21 +119,26 @@ public class ApiContainer {
 
         String ver = "";
         if (version != null) {
-            ver = String.valueOf(version.version());
+            ver = version.version().trim().replace(" ", "");
         }
 
-        // 类上的注解加上方法上的注解构成最终调用方法的Api名称
-        String apiName = methodApiMapping.value().trim();
+        // 类上的注解加上方法上的注解构成最终调用方法的Api名称,忽略空格
+        String apiName = methodApiMapping.value().trim().replace(" ", "");
 
         if (classApiMapping != null) {
 
-            String classApiName = classApiMapping.value().trim();
+            String classApiName = classApiMapping.value().trim().replace(" ", "");
 
-            if (!classApiName.endsWith(".")) {
-                classApiName += ".";
+            if (!StringUtils.endsWith(classApiName, ".")) {
+                apiName = classApiName + "." + apiName;
+            } else {
+                apiName = classApiName + apiName;
             }
 
-            apiName = classApiName + apiName;
+            if (StringUtils.isBlank(apiName)) {
+                return;
+            }
+
         }
 
         // api加上版本号
@@ -140,10 +147,10 @@ public class ApiContainer {
         }
 
         // ApiMapping配置重名校验-不支持存在重复的ApiMapping配置
-
         if (apiMap.containsKey(apiName)) {
             ApiRunnable apiRunExt = apiMap.get(apiName);
-            throw new ApiException("API:[" + apiName + "]在" + apiRunExt.getTargetName() + "与" + beanName + "中存在重复配置，请检查配置");
+            throw new ApiException(
+                    "API:[" + apiName + "]在" + apiRunExt.getTargetName() + "与" + beanName + "中存在重复配置，请检查配置");
         }
 
         ApiRunnable apiRun = new ApiRunnable();
@@ -152,10 +159,39 @@ public class ApiContainer {
         apiRun.targetMethod = method;
         apiRun.targetName = beanName;
         apiRun.needCheck = methodApiMapping.useLogin();
+
         apiMap.put(apiName, apiRun);
 
         LOGGER.info("add api " + apiName);
 
+    }
+
+    /**
+     * 检验method方法参数是否包含object模糊类型
+     *
+     * @param aClass Class
+     * @param method Method
+     */
+    private void checkDeclaredFields(Class aClass, Method method) {
+
+        if (Collection.class.isAssignableFrom(aClass)) {
+            // 集合类型忽略校验
+            return;
+        }
+        // 接口方法入参类型不能是Object模糊类型
+        if (aClass.equals(Object.class)) {
+            throw new ApiException(
+                    String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "接口方法入参不允许定义Object类型", method.getName()));
+        }
+
+        // 接口方法入参类型不能有Object模糊类型属性
+        for (Field field : aClass.getDeclaredFields()) {
+            if (field.getType().equals(Object.class)) {
+                throw new ApiException(
+                        String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "接口方法入参类型不允许定义Object类型属性", method.getName()));
+            }
+            checkDeclaredFields(field.getType(), method);
+        }
     }
 
     /**
@@ -202,7 +238,6 @@ public class ApiContainer {
         return applicationContext;
     }
 
-
     /**
      * api执行器，用于执行对应的api方法
      */
@@ -233,7 +268,8 @@ public class ApiContainer {
          */
         boolean needCheck;
 
-        public Object execute(Object... args) throws InvocationTargetException, IllegalAccessException, IllegalArgumentException {
+        public Object execute(Object... args)
+                throws InvocationTargetException, IllegalAccessException, IllegalArgumentException {
 
             if (target == null) {
                 // 到springIOC容器中找bean

@@ -2,6 +2,7 @@ package com.yadda.api.core;
 
 import com.yadda.api.common.*;
 import com.yadda.api.core.ApiContainer.ApiRunnable;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -224,18 +225,16 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         String json = request.getParameter(PARAMS);
         String apiName = request.getParameter(METHOD);
         String version = request.getParameter(VERSION);
-        // 请求类型
-        String methodType = request.getMethod();
 
         ApiRunnable api;
 
-        if ((api = apiContainer.findApiRunnable(apiName, version)) == null) {
-            throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，指定的API不存在,API:" + apiName + ",version:" + version);
-        } else if (apiName == null || "".equals(apiName.trim())) {
+        if (StringUtils.isBlank(apiName)) {
             throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'method'不能为空");
-        } else if (json == null) {
+        } else if ((api = apiContainer.findApiRunnable(apiName, version)) == null) {
+            throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，指定的API不存在,API:" + apiName + ",version:" + version);
+        }  else if (json == null) {
             throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'params'不能为空");
-        } else if (api.methodType != MethodEnum.ALL && api.methodType.toString().toUpperCase().equalsIgnoreCase(methodType.toUpperCase())) {
+        } else if (api.methodType != MethodEnum.ALL && api.methodType.toString().toUpperCase().equals(request.getMethod().toUpperCase())) {
             throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，API:" + apiName + " 只支持" + api.methodType.toString() + "调用");
         }
 

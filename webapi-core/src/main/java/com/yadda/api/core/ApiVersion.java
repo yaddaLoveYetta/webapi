@@ -7,13 +7,13 @@ import java.lang.annotation.Target;
 
 /**
  * API版本号
- * 
- * @ClassName ApiVersion
+ *
  * @author yadda
+ * @ClassName ApiVersion
  * @date 2017-09-05 16:53:44 星期二
  */
 @Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApiVersion {
-	float version();
+    String version();
 }

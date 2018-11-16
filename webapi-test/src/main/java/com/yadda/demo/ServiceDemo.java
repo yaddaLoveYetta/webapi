@@ -1,11 +1,9 @@
 package com.yadda.demo;
 
-import com.yadda.api.common.ApiException;
 import com.yadda.api.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.awt.print.PrinterAbortException;
 import java.util.List;
 
 /**
@@ -18,7 +16,7 @@ public class ServiceDemo {
     @Autowired
     private TokenService defaultTokenService;
 
-    @ApiVersion(version = 1.0f)
+    @ApiVersion(version = "1.0")
     @ApiMapping(value = "setAge", useLogin = true)
     public void setAge(Student student, int age, ApiRequest apiRequest) {
 
@@ -51,7 +49,7 @@ public class ServiceDemo {
     }
 
     @ApiMapping(value = "getInfo", useLogin = true)
-    @ApiVersion(version = 2.0f)
+    @ApiVersion(version = "2.0")
     public Student getInfo(String name) {
         Student s = new Student();
         s.setName(name);
