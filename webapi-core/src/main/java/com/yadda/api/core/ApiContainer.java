@@ -2,12 +2,15 @@ package com.yadda.api.core;
 // api IOC大仓库
 
 import com.yadda.api.common.ApiException;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
-import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -33,17 +36,17 @@ public class ApiContainer {
     /**
      * 解析出所有api
      */
-    public void loadApiFromSpringBeans() {
+    public void loadApiFromSpringBeans() throws ApiException {
 
         // spring ioc容器中所有bean
-        String[] names = applicationContext.getBeanDefinitionNames();
+        String[] beanNames = applicationContext.getBeanDefinitionNames();
 
         Class<?> type;
 
         // 反射
-        for (String name : names) {
+        for (String beanName : beanNames) {
 
-            type = applicationContext.getType(name);
+            type = applicationContext.getType(beanName);
 
             // 类上的APIMapping注解
             ApiMapping classApiMapping = type.getAnnotation(ApiMapping.class);
@@ -61,7 +64,7 @@ public class ApiContainer {
                 if (methodApiMapping != null) {
                     // 方法上必须有ApiMapping注解，否则该方法不被解析为合法api
                     // 类上的注解加上方法上的注解构成最终调用方法的Api名称
-                    addApiItem(classApiMapping, methodApiMapping, classApiVersion, methodApiVersion, name, method);
+                    addApiItem(classApiMapping, methodApiMapping, classApiVersion, methodApiVersion, beanName, method);
                 }
             }
         }
@@ -83,7 +86,7 @@ public class ApiContainer {
      * @date 2017-09-04 10:37:55 星期一
      */
     private void addApiItem(ApiMapping classApiMapping, ApiMapping methodApiMapping, ApiVersion classApiVersion,
-            ApiVersion methodApiVersion, String beanName, Method method) {
+            ApiVersion methodApiVersion, String beanName, Method method) throws ApiException {
 
         //执行接口返回模型规范的自动校验
 
@@ -92,20 +95,11 @@ public class ApiContainer {
             throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "不允许直接返回Object类型", method.getName()));
         }
 
-        //2:返回类型必须可被序列化(非必须)
-        if (Serializable.class.isAssignableFrom(method.getReturnType())) {
-            throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型必须可被序列化", method.getName()));
-        }
-
-        //3:接口返回类型不能有Object模糊类型属性
+        //2:接口返回类型不能有Object模糊类型属性
         for (Field field : method.getReturnType().getDeclaredFields()) {
             if (field.getType().equals(Object.class)) {
                 throw new ApiException(
                         String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型不允许定义Object属性", method.getName()));
-            }
-            // 非必须
-            if (Serializable.class.isAssignableFrom(field.getType())) {
-                throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型属性必须可被序列化", method.getName()));
             }
         }
 
@@ -172,7 +166,7 @@ public class ApiContainer {
      * @param aClass Class
      * @param method Method
      */
-    private void checkDeclaredFields(Class aClass, Method method) {
+    private void checkDeclaredFields(Class aClass, Method method) throws ApiException {
 
         if (Collection.class.isAssignableFrom(aClass)) {
             // 集合类型忽略校验
@@ -197,9 +191,8 @@ public class ApiContainer {
     /**
      * 查找无版本控制api
      *
-     * @param apiName
+     * @param apiName apiName
      * @return ApiRunnable
-     * @Title findApiRunnable
      * @date 2017-09-06 13:40:42 星期三
      */
     public ApiRunnable findApiRunnable(String apiName) {
@@ -209,29 +202,16 @@ public class ApiContainer {
     /**
      * 查找对应版本api
      *
-     * @param apiName
-     * @param version
+     * @param apiName apiName
+     * @param version version
      * @return ApiRunnable
-     * @Title findApiRunnable
      * @date 2017-09-06 13:40:54 星期三
      */
     public ApiRunnable findApiRunnable(String apiName, String version) {
-        if (version == null) {
+        if (StringUtils.isNotBlank(version)) {
             return apiMap.get(apiName);
         }
         return apiMap.get(apiName + "_" + version);
-    }
-
-    // public List<ApiRunnable> findApiRunnables(String apiName) {
-    // if (apiName == null) {
-    // throw new IllegalArgumentException("api name must not null");
-    // }
-    //
-    // List<ApiRunnable> list = new ArrayList<ApiRunnable>();
-    // }
-
-    public boolean containApi(String apiName, String version) {
-        return apiMap.containsKey(apiName + "_" + version);
     }
 
     public ApplicationContext getApplicationContext() {
@@ -241,6 +221,10 @@ public class ApiContainer {
     /**
      * api执行器，用于执行对应的api方法
      */
+    @Setter
+    @Getter
+    @ToString
+    @Accessors(chain = true)
     public class ApiRunnable {
 
         /**
@@ -278,58 +262,6 @@ public class ApiContainer {
 
             return targetMethod.invoke(target, args);
 
-        }
-
-        public Class<?>[] getParamTypes() {
-            return targetMethod.getParameterTypes();
-        }
-
-        public String getApiName() {
-            return apiName;
-        }
-
-        public MethodEnum getMethodType() {
-            return methodType;
-        }
-
-        public void setMethodType(MethodEnum methodType) {
-            this.methodType = methodType;
-        }
-
-        public void setApiName(String apiName) {
-            this.apiName = apiName;
-        }
-
-        public String getTargetName() {
-            return targetName;
-        }
-
-        public void setTargetName(String targetName) {
-            this.targetName = targetName;
-        }
-
-        public Object getTarget() {
-            return target;
-        }
-
-        public void setTarget(Object target) {
-            this.target = target;
-        }
-
-        public Method getTargetMethod() {
-            return targetMethod;
-        }
-
-        public void setTargetMethod(Method targetMethod) {
-            this.targetMethod = targetMethod;
-        }
-
-        public boolean isNeedCheck() {
-            return needCheck;
-        }
-
-        public void setNeedCheck(boolean needCheck) {
-            this.needCheck = needCheck;
         }
 
     }

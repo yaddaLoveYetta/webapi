@@ -26,10 +26,20 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiHandler.class);
 
+    /**
+     * api接口参数
+     */
     private static final String PARAMS = "params";
+    /**
+     * api接口名称
+     */
     private static final String METHOD = "method";
+    /**
+     * api接口版本
+     */
     private static final String VERSION = "version";
 
+    private ApplicationContext applicationContext;
     private ApiContainer apiContainer;
     private final ParameterNameDiscoverer parameterUtil;
 
@@ -69,24 +79,24 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      * 9. 调用BeanPostProcessor的后初始化方法;
      */
     @Override
-    public void afterPropertiesSet() {
+    public void afterPropertiesSet() throws ApiException {
         apiContainer.loadApiFromSpringBeans();
+         /* tokenService = context.getBean(TokenService.class);
+        tokenHandler = context.getBean(TokenHandler.class);
+        logger.info("init apiContainer & tokenService success");
+        logger.info("tokenService:" + tokenService);*/
     }
 
     @Override
     public void setApplicationContext(ApplicationContext context) throws BeansException {
+        applicationContext = context;
         apiContainer = new ApiContainer(context);
-       /* tokenService = context.getBean(TokenService.class);
-        tokenHandler = context.getBean(TokenHandler.class);
-        logger.info("init apiContainer & tokenService success");
-        logger.info("tokenService:" + tokenService);*/
     }
 
     public void handle(HttpServletRequest request, HttpServletResponse response) {
         // 系统参数校验
         String params = request.getParameter(PARAMS);
         String method = request.getParameter(METHOD);
-
 
         Result r = new Result();
 
@@ -97,12 +107,14 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
         try {
 
-            apiRun = sysParamsValdate(request);
+            apiRun = sysParamsValidate(request);
             logger.info("请求接口={" + method + "} 参数=" + params + "");
 
             if (apiRun.needCheck) {
                 // 方法需要进行签名验证
-
+                if (null == tokenService) {
+                    throw new ApiException("未配置tokenService，不能进行接口签名校验");
+                }
                 // 构建ApiRequest
                 apiRequest = buildApiRequest(request);
                 // 签名验证
@@ -112,11 +124,12 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
                 }
 
                 if (!apiRequest.isChecked()) {
-                    throw new ApiException(ResultCode.ACCESS_TOKEN_INVALID_OR_NO_LONGER_VALID, "调用失败，用户未登录");
+                    throw new ApiException(ResultCode.ACCESS_TOKEN_INVALID_OR_NO_LONGER_VALID, "调用失败，api签名校验失败");
                 }
 
             }
 
+            // 封装api调用参数
             Object[] args = buildParams(apiRun, params, request, response);
 
             Object result = apiRun.execute(args);
@@ -128,7 +141,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
             r.setMsg("Success");
             r.setData(result);
 
-        } catch (BaseException e) {
+        } catch (ApiException e) {
             logger.error("请求接口={" + method + "} 参数=" + params + "", e);
             r.setCode(e.getCode());
             r.setMsg(e.getMessage());
@@ -170,15 +183,16 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
     /**
      * 对result进行包装，将不能格式化成json{}|[]的对象包装成ResultObject对象
      *
-     * @param result
-     * @return Object
-     * @Title resultWarp
+     * @param result Object
+     * @return Object Object
      * @date 2017-09-06 11:55:39 星期三
      */
     private Object resultWarp(Object result) {
 
-        if (result == null || Integer.class.equals(result.getClass()) || Long.class.equals(result.getClass()) || Float.class.equals(result.getClass()) || Double.class.equals(result.getClass())
-                || Date.class.equals(result.getClass()) || Character.class.equals(result.getClass()) || Byte.class.equals(result.getClass())
+        if (result == null || Integer.class.equals(result.getClass()) || Long.class.equals(result.getClass()) ||
+                Float.class.equals(result.getClass()) || Double.class.equals(result.getClass())
+                || Date.class.equals(result.getClass()) || Character.class.equals(result.getClass()) ||
+                Byte.class.equals(result.getClass())
                 || Short.class.equals(result.getClass()) || String.class.equals(result.getClass())) {
 
             result = new ResultObject(result);
@@ -215,12 +229,11 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
     /**
      * 校验是否符合api接口规范
      *
-     * @param request
+     * @param request HttpServletRequest
      * @return ApiRunnable
-     * @Title sysParamsValdate
      * @date 2017-09-02 01:51:51 星期六
      */
-    private ApiRunnable sysParamsValdate(HttpServletRequest request) {
+    private ApiRunnable sysParamsValidate(HttpServletRequest request) throws ApiException {
 
         String json = request.getParameter(PARAMS);
         String apiName = request.getParameter(METHOD);
@@ -231,11 +244,14 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         if (StringUtils.isBlank(apiName)) {
             throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'method'不能为空");
         } else if ((api = apiContainer.findApiRunnable(apiName, version)) == null) {
-            throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，指定的API不存在,API:" + apiName + ",version:" + version);
-        }  else if (json == null) {
+            throw new ApiException(ResultCode.INVALID_PARAMETER,
+                    "调用失败，指定的API不存在,API:" + apiName + ",version:" + version);
+        } else if (json == null) {
             throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'params'不能为空");
-        } else if (api.methodType != MethodEnum.ALL && api.methodType.toString().toUpperCase().equals(request.getMethod().toUpperCase())) {
-            throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，API:" + apiName + " 只支持" + api.methodType.toString() + "调用");
+        } else if (api.methodType != MethodEnum.ALL &&
+                api.methodType.toString().equalsIgnoreCase(request.getMethod())) {
+            throw new ApiException(ResultCode.INVALID_PARAMETER,
+                    "调用失败，API:" + apiName + ",version:" + version + " 只支持" + api.methodType.toString() + "调用");
         }
 
         // 可多一个签名做校验
@@ -247,13 +263,13 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      *
      * @param api       api
      * @param paramJson 参数
-     * @param request
-     * @param response
+     * @param request   HttpServletRequest
+     * @param response  HttpServletResponse
      * @return Object[]
-     * @Title buildParams
      * @date 2017-09-02 01:53:08 星期六
      */
-    private Object[] buildParams(ApiRunnable api, String paramJson, HttpServletRequest request, HttpServletResponse response) {
+    private Object[] buildParams(ApiRunnable api, String paramJson, HttpServletRequest request,
+            HttpServletResponse response) throws ApiException {
 
         // 请求参数
         Map<String, Object> requestParams = null;
@@ -274,13 +290,13 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         // 目标方法的参数类型
         Class<?>[] paramTypes = method.getParameterTypes();
 
-        // 判断传递参数是否符合目标方法定义--目标方法中是否存在传递的参数
+        // 判断传递参数是否符合目标方法定义--目标方法中是否存在传递的参数(优化:多传递的参数可直接忽略)
         for (Map.Entry<String, Object> m : requestParams.entrySet()) {
             if (!methodParamNames.contains(m.getKey())) {
                 throw new ApiException("调用失败，接口" + api.getApiName() + "不存在 " + m.getKey() + "参数，请检查params参数");
             }
         }
-        // 判断传递参数是否符合接口定义-参数是否符合目标方法签名
+        // 判断传递参数是否符合接口定义-参数是否符合目标方法签名(可优化，未传递参数值根据是否必须判断，未传非必须设置为null,未传必须提示错误)
         for (String paramName : methodParamNames) {
             if (!requestParams.containsKey(paramName)) {
                 throw new ApiException("调用失败，缺少参数:" + paramName + ",请检查params参数");
@@ -297,7 +313,8 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
                 args[i] = response;
             } else if (requestParams.containsKey(methodParamNames.get(i))) {
                 try {
-                    args[i] = convertJsonToBean(methodParamNames.get(i), requestParams.get(methodParamNames.get(i)), paramTypes[i]);
+                    args[i] = convertJsonToBean(methodParamNames.get(i), requestParams.get(methodParamNames.get(i)),
+                            paramTypes[i]);
                 } catch (Exception e) {
                     throw new ApiException("调用失败，指定参数格式错误或值错误'" + methodParamNames.get(i) + "' " + e.getMessage());
                 }
@@ -316,8 +333,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      * @param paramValue  目标方法参数值
      * @param targetClass 目标方法参数类型
      * @return Object
-     * @throws Exception
-     * @Title convertJsonToBean
+     * @throws Exception Exception
      * @date 2017-09-08 08:41:42 星期五
      */
     private <T> Object convertJsonToBean(String paramName, Object paramValue, Class<T> targetClass) throws Exception {
@@ -358,10 +374,9 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
     /**
      * 签名校验
      *
-     * @param apiRequest
+     * @param apiRequest ApiRequest
      * @return ApiRequest
-     * @throws ApiException
-     * @Title signCheck
+     * @throws ApiException ApiException
      * @date 2017-10-28 00:22:53 星期六
      */
     private ApiRequest signCheck(ApiRequest apiRequest) throws ApiException {
@@ -404,7 +419,9 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
         apiRequest.setChecked(true);
 
-        tokenHandler.tokenCheckSuccess(token);
+        if (null != tokenHandler) {
+            tokenHandler.tokenCheckSuccess(token);
+        }
 
         return apiRequest;
     }

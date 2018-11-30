@@ -5,18 +5,21 @@ package com.yadda.api.common;
  *
  * @author yadda
  */
-public class ApiException extends BaseException {
+public class ApiException extends Exception {
 
-    //private static final Integer CODE = ResultCode.SYS_ERROR;
-
+    /**
+     * 错误代码
+     */
     private Integer code;
+    /**
+     * 错误描述
+     */
+    private String msg;
 
-    @Override
     public Integer getCode() {
         return code;
     }
 
-    @Override
     public void setCode(Integer code) {
         this.code = code;
     }
@@ -26,12 +29,12 @@ public class ApiException extends BaseException {
     }
 
     public ApiException(Integer code, String msg) {
-        super(code, msg);
+        super(msg);
         this.code = code;
     }
 
     public ApiException(Integer code, String msg, Throwable cause) {
-        super(code, msg, cause);
+        super(msg, cause);
         this.code = code;
     }
 

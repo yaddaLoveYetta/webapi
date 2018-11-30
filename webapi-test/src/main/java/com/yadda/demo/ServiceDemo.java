@@ -10,7 +10,7 @@ import java.util.List;
  * @author yadda
  */
 @Service
-@ApiMapping(value = "test")
+@ApiMapping(value = "demo")
 public class ServiceDemo {
 
     @Autowired

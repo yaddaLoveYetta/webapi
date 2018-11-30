@@ -13,6 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
         <webapi.core.version>1.0.0</webapi.core.version>
+
     </properties>
 
     <dependencies>
@@ -36,6 +37,7 @@
 
             <version>1.2</version>
         </dependency>
+
     </dependencies>
 
     <build>
