@@ -4,12 +4,13 @@ package com.yadda.api.core;
  * <p>
  * 请求签名验证对象
  * <p>
- * 签名规则：<p>
- * 1:将请求参数params按照字典顺序升序排序得到字符串s1,<p>
- * 2:appSecret+timestamp+s1 得到字符串s2<p>
- * 3:将s2进行MD5加密得到字符串s3<p>
- * 4:将s3转换为小写得到签名sign<p>
- * <p>
+ * <pre>
+ * 签名规则：
+ * 1:将请求参数params按照字典顺序升序排序得到字符串s1
+ * 2:appSecret+timestamp+s1 得到字符串s2
+ * 3:将s2进行MD5加密得到字符串s3
+ * 4:将s3转换为小写得到签名sign
+ * </pre>
  * 客户端将token，sign，timestamp，params作为参数提交请求业务接口
  *
  * @author yadda

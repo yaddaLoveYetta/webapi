@@ -1,5 +1,4 @@
 package com.yadda.api.core;
-// api IOC大仓库
 
 import com.yadda.api.common.ApiException;
 import lombok.Getter;
@@ -18,6 +17,8 @@ import java.util.Collection;
 import java.util.HashMap;
 
 /**
+ * web api IOC大仓库
+ *
  * @author yadda
  */
 public class ApiContainer {
@@ -36,7 +37,7 @@ public class ApiContainer {
     /**
      * 解析出所有api
      */
-    public void loadApiFromSpringBeans() throws ApiException {
+    public void loadApi() throws ApiException {
 
         // spring ioc容器中所有bean
         String[] beanNames = applicationContext.getBeanDefinitionNames();
@@ -86,27 +87,10 @@ public class ApiContainer {
      * @date 2017-09-04 10:37:55 星期一
      */
     private void addApiItem(ApiMapping classApiMapping, ApiMapping methodApiMapping, ApiVersion classApiVersion,
-            ApiVersion methodApiVersion, String beanName, Method method) throws ApiException {
+                            ApiVersion methodApiVersion, String beanName, Method method) throws ApiException {
 
         //执行接口返回模型规范的自动校验
-
-        //1:接口不能直接返回Object模糊类型
-        if (method.getReturnType().equals(Object.class)) {
-            throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "不允许直接返回Object类型", method.getName()));
-        }
-
-        //2:接口返回类型不能有Object模糊类型属性
-        for (Field field : method.getReturnType().getDeclaredFields()) {
-            if (field.getType().equals(Object.class)) {
-                throw new ApiException(
-                        String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型不允许定义Object属性", method.getName()));
-            }
-        }
-
-        // 4:接口方法入参不能直接用Object模糊类型
-        for (Class<?> aClass : method.getParameterTypes()) {
-            checkDeclaredFields(aClass, method);
-        }
+        ApiSpecificationCheck(method);
 
         // method上的版本号优先级高于类上的版本号
         ApiVersion version = methodApiVersion == null ? classApiVersion : methodApiVersion;
@@ -130,6 +114,7 @@ public class ApiContainer {
             }
 
             if (StringUtils.isBlank(apiName)) {
+                // 不合法的Api名称直接忽略
                 return;
             }
 
@@ -152,7 +137,7 @@ public class ApiContainer {
         apiRun.methodType = methodApiMapping.methodType();
         apiRun.targetMethod = method;
         apiRun.targetName = beanName;
-        apiRun.needCheck = methodApiMapping.useLogin();
+        apiRun.signCheck = methodApiMapping.signCheck();
 
         apiMap.put(apiName, apiRun);
 
@@ -161,25 +146,52 @@ public class ApiContainer {
     }
 
     /**
+     * api接口规范校验
+     *
+     * @param method Method
+     * @throws ApiException ApiException
+     */
+    private void ApiSpecificationCheck(Method method) throws ApiException {
+
+        //1:接口不能直接返回Object模糊类型
+        if (method.getReturnType().equals(Object.class)) {
+            throw new ApiException(String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "不允许直接返回Object类型", method.getName()));
+        }
+
+        //2:接口返回类型不能有Object模糊类型属性
+        for (Field field : method.getReturnType().getDeclaredFields()) {
+            if (field.getType().equals(Object.class)) {
+                throw new ApiException(
+                        String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "返回类型不允许定义Object属性", method.getName()));
+            }
+        }
+
+        // 4:接口方法入参不能直接用Object模糊类型
+        for (Class<?> aClass : method.getParameterTypes()) {
+            checkDeclaredFields(aClass, method);
+        }
+    }
+
+    /**
      * 检验method方法参数是否包含object模糊类型
      *
-     * @param aClass Class
+     * @param clazz  Class
      * @param method Method
      */
-    private void checkDeclaredFields(Class aClass, Method method) throws ApiException {
+    private void checkDeclaredFields(Class clazz, Method method) throws ApiException {
 
-        if (Collection.class.isAssignableFrom(aClass)) {
+        if (Collection.class.isAssignableFrom(clazz)) {
             // 集合类型忽略校验
             return;
         }
         // 接口方法入参类型不能是Object模糊类型
-        if (aClass.equals(Object.class)) {
+        if (clazz.equals(Object.class)) {
             throw new ApiException(
                     String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "接口方法入参不允许定义Object类型", method.getName()));
         }
 
         // 接口方法入参类型不能有Object模糊类型属性
-        for (Field field : aClass.getDeclaredFields()) {
+        for (Field field : clazz.getDeclaredFields()) {
             if (field.getType().equals(Object.class)) {
                 throw new ApiException(
                         String.format("你的接口模型不符合规范:[%s] 请修正方法:[%s]", "接口方法入参类型不允许定义Object类型属性", method.getName()));
@@ -208,7 +220,7 @@ public class ApiContainer {
      * @date 2017-09-06 13:40:54 星期三
      */
     public ApiRunnable findApiRunnable(String apiName, String version) {
-        if (StringUtils.isNotBlank(version)) {
+        if (StringUtils.isBlank(version)) {
             return apiMap.get(apiName);
         }
         return apiMap.get(apiName + "_" + version);
@@ -250,7 +262,7 @@ public class ApiContainer {
         /**
          * 方法是否需要进行签名验证
          */
-        boolean needCheck;
+        boolean signCheck;
 
         public Object execute(Object... args)
                 throws InvocationTargetException, IllegalAccessException, IllegalArgumentException {

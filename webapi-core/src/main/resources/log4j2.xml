@@ -172,7 +172,7 @@
 
         <!-- 剩余其他的日志级别 -->
         <asyncRoot level="error" includeLocation="true">
-            <appender-ref ref="error_appender"/>
+            <!--<appender-ref ref="error_appender"/>-->
             <appender-ref ref="console_appender"/>
         </asyncRoot>
     </Loggers>

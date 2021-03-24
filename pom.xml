@@ -15,7 +15,7 @@
 
 
     <description>
-        给予SpringMVC通用webAPI设计
+        基于SpringMVC通用webAPI设计
         1：去掉MVC控制器，将http直接无缝接入java服务接口
         2：统一出入参格式
         3：统一异常规范:

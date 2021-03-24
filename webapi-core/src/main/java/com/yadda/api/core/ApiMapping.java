@@ -45,5 +45,5 @@ public @interface ApiMapping {
      * @return boolean
      * @date 2017-10-27 23:05:49 星期五
      */
-    boolean useLogin() default false;
+    boolean signCheck() default false;
 }

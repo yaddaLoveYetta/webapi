@@ -31,7 +31,7 @@ public class ApiServlet extends HttpServlet {
         apiHandler = context.getBean(ApiHandler.class);
 
         if (apiHandler == null) {
-            throw new ExceptionInInitializerError("未找到com.yadda.api.core.ApiHandler配置！");
+            throw new ExceptionInInitializerError("no apiHandler exist!");
         }
     }
 
@@ -43,7 +43,6 @@ public class ApiServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         apiHandler.handle(req, resp);
-        getServletContext();
     }
 
     @Override

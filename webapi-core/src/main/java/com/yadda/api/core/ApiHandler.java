@@ -24,7 +24,7 @@ import java.util.*;
  */
 public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
-    private static final Logger logger = LoggerFactory.getLogger(ApiHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApiHandler.class);
 
     /**
      * api接口参数
@@ -39,13 +39,40 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      */
     private static final String VERSION = "version";
 
-    private ApplicationContext applicationContext;
+    private ApplicationContext context;
+
     private ApiContainer apiContainer;
+
     private final ParameterNameDiscoverer parameterUtil;
 
     private TokenService tokenService;
 
     private TokenHandler tokenHandler;
+
+    /**
+     * 这些返回类型的方法，返回值进行统一包装成value
+     */
+    private static Set<Class> TYPES = new HashSet<>(32);
+
+    static {
+        TYPES.add(Integer.class);
+        TYPES.add(Double.class);
+        TYPES.add(Float.class);
+        TYPES.add(Long.class);
+        TYPES.add(Short.class);
+        TYPES.add(Byte.class);
+        TYPES.add(Boolean.class);
+        TYPES.add(Character.class);
+        TYPES.add(String.class);
+        TYPES.add(int.class);
+        TYPES.add(double.class);
+        TYPES.add(long.class);
+        TYPES.add(short.class);
+        TYPES.add(byte.class);
+        TYPES.add(boolean.class);
+        TYPES.add(char.class);
+        TYPES.add(float.class);
+    }
 
     public TokenService getTokenService() {
         return tokenService;
@@ -68,19 +95,14 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
     }
 
     /**
-     * 1. 实例化()构造函数;
-     * 2. 设置属性值(set);
-     * 3. 如果实现了BeanNameAware接口,调用setBeanName设置Bean的ID或者Name;
-     * 4. 如果实现BeanFactoryAware接口,调用setBeanFactory 设置BeanFactory;
-     * 5. 如果实现ApplicationContextAware,调用setApplicationContext设置ApplicationContext
-     * 6. 调用BeanPostProcessor的预先初始化方法;
-     * 7. 调用InitializingBean的afterPropertiesSet()方法;
-     * 8. 调用定制init-method方法；
-     * 9. 调用BeanPostProcessor的后初始化方法;
+     * 1. 实例化()构造函数; 2. 设置属性值(set); 3. 如果实现了BeanNameAware接口,调用setBeanName设置Bean的ID或者Name; 4.
+     * 如果实现BeanFactoryAware接口,调用setBeanFactory 设置BeanFactory; 5. 如果实现ApplicationContextAware,
+     * 调用setApplicationContext设置ApplicationContext 6. 调用BeanPostProcessor的预先初始化方法; 7.
+     * 调用InitializingBean的afterPropertiesSet()方法; 8. 调用定制init-method方法； 9. 调用BeanPostProcessor的后初始化方法;
      */
     @Override
     public void afterPropertiesSet() throws ApiException {
-        apiContainer.loadApiFromSpringBeans();
+        apiContainer.loadApi();
          /* tokenService = context.getBean(TokenService.class);
         tokenHandler = context.getBean(TokenHandler.class);
         logger.info("init apiContainer & tokenService success");
@@ -89,12 +111,12 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
     @Override
     public void setApplicationContext(ApplicationContext context) throws BeansException {
-        applicationContext = context;
+        this.context = context;
         apiContainer = new ApiContainer(context);
     }
 
     public void handle(HttpServletRequest request, HttpServletResponse response) {
-        // 系统参数校验
+
         String params = request.getParameter(PARAMS);
         String method = request.getParameter(METHOD);
 
@@ -106,14 +128,14 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         ApiRequest apiRequest = null;
 
         try {
-
+            // 系统参数校验
             apiRun = sysParamsValidate(request);
-            logger.info("请求接口={" + method + "} 参数=" + params + "");
+            LOGGER.info("请求接口={" + method + "} 参数=" + params + "");
 
-            if (apiRun.needCheck) {
+            if (apiRun.signCheck) {
                 // 方法需要进行签名验证
                 if (null == tokenService) {
-                    throw new ApiException("未配置tokenService，不能进行接口签名校验");
+                    throw new ApiException(ResultCode.INVALID_PARAMETER, "未配置tokenService，不能进行接口签名校验");
                 }
                 // 构建ApiRequest
                 apiRequest = buildApiRequest(request);
@@ -129,29 +151,30 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
             }
 
-            // 封装api调用参数
+            // 业务参数校验-封装api调用参数
             Object[] args = buildParams(apiRun, params, request, response);
 
+            // 调用业务方法
             Object result = apiRun.execute(args);
 
-            // result统一格式化成json,如果接口返回基本类型或者不能序列化成json类型eg:String,int,boolean...用data做key格式化成json形式
-            result = resultWarp(result);
+            //对结果的统一封装
+            result = warpResult(apiRun.getTargetMethod(), result);
 
             r.setCode(ResultCode.SUCCESS);
             r.setMsg("Success");
             r.setData(result);
 
         } catch (ApiException e) {
-            logger.error("请求接口={" + method + "} 参数=" + params + "", e);
+            LOGGER.error("请求接口={" + method + "} 参数=" + params + "", e);
             r.setCode(e.getCode());
             r.setMsg(e.getMessage());
         } catch (InvocationTargetException e) {
             // 真实api中抛出的未捕获异常
-            logger.error("请求接口={" + method + "} 参数=" + params + "", e);
+            LOGGER.error("请求接口={" + method + "} 参数=" + params + "", e);
             r.setCode(ResultCode.BUSINESS_LOGIC_ERROR);
             r.setMsg(e.getTargetException().getMessage());
         } catch (Exception e) {
-            logger.error("其他业务异常");
+            LOGGER.error("其他业务异常", e);
             r.setCode(ResultCode.UNKNOWN_ERROR);
             r.setMsg(e.getMessage());
         }
@@ -189,12 +212,26 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      */
     private Object resultWarp(Object result) {
 
-        if (result == null || Integer.class.equals(result.getClass()) || Long.class.equals(result.getClass()) ||
-                Float.class.equals(result.getClass()) || Double.class.equals(result.getClass())
-                || Date.class.equals(result.getClass()) || Character.class.equals(result.getClass()) ||
-                Byte.class.equals(result.getClass())
-                || Short.class.equals(result.getClass()) || String.class.equals(result.getClass())) {
+        if (TYPES.contains(result.getClass())) {
+            result = new ResultObject(result);
+        }
+        return result;
+    }
 
+    /**
+     * 对result进行包装，将不能格式化成json{}|[]的对象包装成NoJsonWarp对象
+     *
+     * @param method 当前调用的方法
+     * @param result 方法返回结果
+     * @return Object
+     * @date 2017-09-06 11:55:39 星期三
+     */
+    private Object warpResult(Method method, Object result) {
+
+        if (method.getReturnType() == Void.TYPE) {
+            // void类型方法
+            result = "";
+        } else if (TYPES.contains(method.getReturnType())) {
             result = new ResultObject(result);
         }
 
@@ -220,7 +257,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
 
         } catch (IOException e) {
 
-            logger.error("服务中心响应异常");
+            LOGGER.error("服务中心响应异常");
             throw new RuntimeException(e);
         }
 
@@ -235,7 +272,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      */
     private ApiRunnable sysParamsValidate(HttpServletRequest request) throws ApiException {
 
-        String json = request.getParameter(PARAMS);
+        String params = request.getParameter(PARAMS);
         String apiName = request.getParameter(METHOD);
         String version = request.getParameter(VERSION);
 
@@ -246,7 +283,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         } else if ((api = apiContainer.findApiRunnable(apiName, version)) == null) {
             throw new ApiException(ResultCode.INVALID_PARAMETER,
                     "调用失败，指定的API不存在,API:" + apiName + ",version:" + version);
-        } else if (json == null) {
+        } else if (params == null) {
             throw new ApiException(ResultCode.INVALID_PARAMETER, "调用失败，参数'params'不能为空");
         } else if (api.methodType != MethodEnum.ALL &&
                 api.methodType.toString().equalsIgnoreCase(request.getMethod())) {
@@ -269,7 +306,7 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      * @date 2017-09-02 01:53:08 星期六
      */
     private Object[] buildParams(ApiRunnable api, String paramJson, HttpServletRequest request,
-            HttpServletResponse response) throws ApiException {
+                                 HttpServletResponse response) throws ApiException {
 
         // 请求参数
         Map<String, Object> requestParams = null;
@@ -375,11 +412,10 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
      * 签名校验
      *
      * @param apiRequest ApiRequest
-     * @return ApiRequest
      * @throws ApiException ApiException
      * @date 2017-10-28 00:22:53 星期六
      */
-    private ApiRequest signCheck(ApiRequest apiRequest) throws ApiException {
+    private void signCheck(ApiRequest apiRequest) throws ApiException {
 
         // 默认不通过
         apiRequest.setChecked(false);
@@ -412,10 +448,10 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         }
 
         // 时间验证
-//        if (Math.abs(Long.valueOf(timestamp)) - System.currentTimeMillis() > EXPIRE_TIME) {
-//            // 签名8小时过期
-//            throw new ApiException("验证失败，签名失效!");
-//        }
+        //        if (Math.abs(Long.valueOf(timestamp)) - System.currentTimeMillis() > EXPIRE_TIME) {
+        //            // 签名8小时过期
+        //            throw new ApiException("验证失败，签名失效!");
+        //        }
 
         apiRequest.setChecked(true);
 
@@ -423,7 +459,6 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
             tokenHandler.tokenCheckSuccess(token);
         }
 
-        return apiRequest;
     }
 
     /**
@@ -455,6 +490,10 @@ public class ApiHandler implements InitializingBean, ApplicationContextAware {
         Set<String> set = new HashSet<String>();
         set.add("dddfdsf");
 
-        System.out.println(set.contains("dddfdsf"));
+        String s="{‘name’:‘yadda’}";
+
+        Map<String, Object> requestParams  = JsonUtil.toMap(s);
+
+        System.out.println(requestParams);
     }
 }
